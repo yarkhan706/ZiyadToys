@@ -3,82 +3,66 @@ using System.Collections.Generic;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        Console.WriteLine("Welcome to Ziyad's Car Command Console!");
-        Console.WriteLine("Available Commands: start, stop, accelerate, brake, right, left");
-        Console.WriteLine("Note: This car does not support 'left' turn.");
-        Console.WriteLine("Enter commands (separated by space) or 'exit' to quit:");
+        // Define the initial and final states
+        string initialState = "S0";
+        string finalState = "S4";  // Reaching S4 means the sequence is valid.
 
+        // State transition dictionary
+        var stateTransitions = new Dictionary<string, Dictionary<string, string>>
+        {
+            { "S0", new Dictionary<string, string> { { "start", "S1" } } },
+            { "S1", new Dictionary<string, string> { { "accelerate", "S2" }, { "stop", "S4" } } },
+            { "S2", new Dictionary<string, string> { { "right", "S3" }, { "brake", "S4" } } },
+            { "S3", new Dictionary<string, string> { { "stop", "S4" } } },
+            { "S4", new Dictionary<string, string>() } // No more transitions from S4
+        };
+
+        // Prompt user to enter commands
+        Console.WriteLine("Enter car commands (separated by spaces) or 'exit' to quit:");
         while (true)
         {
-            Console.Write("\nEnter Commands: ");
-            string input = Console.ReadLine()?.ToLower();
+            Console.Write("\nInput: ");
+            string input = Console.ReadLine()?.Trim().ToLower();
 
             if (input == "exit")
                 break;
 
-            List<string> commands = new List<string>(input.Split(' '));
+            string[] commands = input.Split(' ');
+            string currentState = initialState;
 
-            if (ValidateCommands(commands))
+            bool isValid = true;
+            foreach (string command in commands)
             {
-                Console.WriteLine("All commands are valid.");
-                ExecuteCommands(commands);
+                // Check if "left" is used (unsupported feature)
+                if (command == "left")
+                {
+                    Console.WriteLine("ERROR: This car does not support left turns!");
+                    isValid = false;
+                    break;
+                }
+
+                // Check for valid state transitions
+                if (stateTransitions[currentState].ContainsKey(command))
+                {
+                    currentState = stateTransitions[currentState][command];
+                }
+                else
+                {
+                    Console.WriteLine($"ERROR: Invalid command '{command}' in state '{currentState}'!");
+                    isValid = false;
+                    break;
+                }
             }
-            else
+
+            // Display result based on final state
+            if (isValid)
             {
-                Console.WriteLine("Invalid command sequence detected! Check your input.");
-            }
-        }
-    }
-
-    static bool ValidateCommands(List<string> commands)
-    {
-        string[] validCommands = { "start", "stop", "accelerate", "brake", "right", "left" };
-
-        foreach (string cmd in commands)
-        {
-            if (!Array.Exists(validCommands, c => c == cmd))
-                return false;
-
-            if (cmd == "left")
-            {
-                Console.WriteLine("Error: The car does not support 'left' turn!");
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    static void ExecuteCommands(List<string> commands)
-    {
-        foreach (string command in commands)
-        {
-            switch (command)
-            {
-                case "start":
-                    Console.WriteLine("Car started.");
-                    break;
-                case "stop":
-                    Console.WriteLine("Car stopped.");
-                    break;
-                case "accelerate":
-                    Console.WriteLine("Car is accelerating.");
-                    break;
-                case "brake":
-                    Console.WriteLine("Car is braking.");
-                    break;
-                case "right":
-                    Console.WriteLine("Car turned right.");
-                    break;
-                case "left":
-                    
-                    Console.WriteLine("This car cannot turn left!");
-                    break;
-                default:
-                    Console.WriteLine($"Unknown command: {command}");
-                    break;
+                if (currentState == finalState)
+                    Console.WriteLine("RESULT OKAY: Commands executed successfully!");
+                else
+                    Console.WriteLine("ERROR: Incomplete command sequence!");
             }
         }
     }
